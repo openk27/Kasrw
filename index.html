@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kas PNI RW 013 - 3D Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-neon: #00f2ff;
+            --secondary-neon: #7000ff;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        body {
+            background: radial-gradient(circle at center, #1e293b 0%, #030712 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .marquee-container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px 0;
+            border-bottom: 2px solid var(--primary-neon);
+        }
+        marquee { font-weight: 600; color: var(--primary-neon); text-transform: uppercase; letter-spacing: 1px; }
+
+        .container { max-width: 1000px; margin: auto; padding: 40px 20px; width: 100%; }
+        header { text-align: center; margin-bottom: 40px; }
+
+        .dashboard-perspective { perspective: 1500px; margin-bottom: 50px; }
+        .dashboard-card-3d {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            padding: 50px 40px;
+            text-align: center;
+            transform: rotateX(15deg);
+            animation: float 6s ease-in-out infinite;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0px) rotateX(15deg); } 50% { transform: translateY(-15px) rotateX(15deg); } }
+        .saldo-amount { font-size: clamp(2rem, 8vw, 3.5rem); font-weight: 800; text-shadow: 0 0 20px var(--primary-neon); }
+
+        .menu-grid-2x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            perspective: 1200px;
+        }
+
+        .menu-card-3d {
+            background: rgba(30, 41, 59, 0.8);
+            height: 140px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+
+        .menu-card-3d:hover {
+            transform: translateZ(30px) rotateY(10deg);
+            border-color: var(--primary-neon);
+            color: var(--primary-neon);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
+        }
+
+        .menu-card-3d span { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; text-align: center; line-height: 1.2; }
+        .menu-label { font-size: 0.6rem; opacity: 0.5; margin-bottom: 5px; letter-spacing: 2px; }
+
+        .signature-section {
+            margin-top: 80px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 20px 10px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .sig-box { text-align: center; min-width: 100px; }
+        .sig-name { font-size: 0.75rem; font-weight: 600; color: var(--primary-neon); border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; display: inline-block; }
+        .sig-title { font-size: 0.6rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+        .sig-space { height: 40px; }
+
+        .page { display: none; animation: slideUp 0.6s ease forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        .active { display: block; }
+
+        .chart-container { background: var(--glass); padding: 30px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .bar-chart { display: flex; align-items: flex-end; justify-content: space-around; height: 200px; margin-top: 40px; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
+        .bar { width: 60px; border-radius: 8px 8px 0 0; position: relative; transition: height 1.5s ease; }
+        .bar-in { background: linear-gradient(to top, #064e3b, #10b981); }
+        .bar-out { background: linear-gradient(to top, #7f1d1d, #ef4444); }
+        .bar-value { position: absolute; top: -30px; width: 100%; text-align: center; font-size: 0.8rem; font-weight: bold; }
+        .nominal-label { font-size: 0.65rem; margin-top: 5px; opacity: 0.8; }
+
+        .btn-back { background: white; border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: 700; margin-bottom: 30px; color: black; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+        td { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px; font-size: 0.8rem; }
+        
+        .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 25px; }
+        .summary-box { padding: 12px; border-radius: 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
+        .summary-box small { font-size: 0.55rem; letter-spacing: 1px; opacity: 0.6; display: block; margin-bottom: 5px; text-transform: uppercase; }
+        .summary-box span { font-weight: 700; font-size: 0.85rem; }
+
+        @media (max-width: 600px) { 
+            .signature-section { padding: 20px 0; }
+            .sig-name { font-size: 0.65rem; }
+            .sig-title { font-size: 0.55rem; }
+            .summary-box span { font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="marquee-container">
+        <marquee scrollamount="7">Laporan Keuangan Rukun Warga 013 - Transparansi untuk Warga</marquee>
+    </div>
+
+    <div class="container page active" id="main-content">
+        <header>
+            <p style="color: var(--primary-neon); font-weight: 600; letter-spacing: 4px; font-size: 0.6rem;">PERMATA NUSA INDAH </p>
+            <h1>RW 013 <span style="font-weight: 300; color: var(--primary-neon);">EMERALD</span></h1>
+        </header>
+
+        <div class="dashboard-perspective">
+            <div class="dashboard-card-3d">
+                <p style="font-size: 0.8rem; letter-spacing: 4px; opacity: 0.7; margin-bottom: 10px;">TOTAL SALDO AKHIR</p>
+                <h2 class="saldo-amount" id="display-saldo">Rp 0</h2>
+            </div>
+        </div>
+
+        <div class="menu-grid-2x2">
+            <div class="menu-card-3d" onclick="showPage('rincian')">
+                <div class="menu-label">DATABASE</div>
+                <span>Rincian<br>Bulanan</span>
+            </div>
+            <div class="menu-card-3d" onclick="showPage('diagram')">
+                <div class="menu-label">STATISTICS</div>
+                <span>Diagram<br>Kas</span>
+            </div>
+            <div class="menu-card-3d" onclick="bukaGoogleDrive()">
+                <div class="menu-label">ARCHIVE</div>
+                <span>Rekap<br>Laporan</span>
+            </div>
+            <div class="menu-card-3d">
+                <div class="menu-label">TENTNAG</div>
+                <span>RW<br>013</span>
+            </div>
+        </div>
+
+        <div class="signature-section">
+            <div class="sig-box">
+                <div class="sig-space"></div>
+                <div class="sig-name">Dede Bunjamin</div>
+                <div class="sig-title">Ketua RW 013</div>
+            </div>
+            <div class="sig-box">
+                <div class="sig-space"></div>
+                <div class="sig-name">Admin</div>
+                <div class="sig-title">Saya</div>
+            </div>
+            <div class="sig-box">
+                <div class="sig-space"></div>
+                <div class="sig-name">Firmansah RT 05</div>
+                <div class="sig-title">Bendahara</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container page" id="halaman-rincian">
+        <button class="btn-back" onclick="showPage('main')">← KEMBALI</button>
+        
+        <div class="summary-grid">
+            <div class="summary-box" style="border-top: 3px solid var(--primary-neon);">
+                <small>Saldo Awal</small>
+                <span id="label-saldo-awal">Rp 0</span>
+            </div>
+            <div class="summary-box" style="border-top: 3px solid #4ade80;">
+                <small>Total Masuk</small>
+                <span id="total-debit" style="color: #4ade80;">Rp 0</span>
+            </div>
+            <div class="summary-box" style="border-top: 3px solid #f87171;">
+                <small>Total Keluar</small>
+                <span id="total-kredit" style="color: #f87171;">Rp 0</span>
+            </div>
+            <div class="summary-box" style="border-top: 3px solid gold;">
+                <small>Saldo Akhir</small>
+                <span id="label-saldo-akhir" style="color: gold;">Rp 0</span>
+            </div>
+        </div>
+
+        <h2 style="margin-bottom: 10px; font-size: 1.2rem;">Log <span style="color: var(--primary-neon);">Transaksi</span></h2>
+        <div style="overflow-x: auto;">
+            <table id="table-transaksi"></table>
+        </div>
+    </div>
+
+    <div class="container page" id="halaman-diagram">
+        <button class="btn-back" onclick="showPage('main')">← KEMBALI</button>
+        <h2 style="margin-bottom: 30px;">Statistik <span style="color: var(--primary-neon);">Keuangan</span></h2>
+        <div class="chart-container">
+            <div class="bar-chart">
+                <div class="bar-group" style="display: flex; flex-direction: column; align-items: center;">
+                    <div class="bar bar-in" id="bar-masuk"><div class="bar-value" id="val-masuk">0%</div></div>
+                    <div style="margin-top:10px; font-size: 0.75rem; font-weight: 600;">PEMASUKAN</div>
+                    <div class="nominal-label" id="diag-nominal-masuk" style="color: #4ade80;">Rp 0</div>
+                </div>
+                <div class="bar-group" style="display: flex; flex-direction: column; align-items: center;">
+                    <div class="bar bar-out" id="bar-keluar"><div class="bar-value" id="val-keluar">0%</div></div>
+                    <div style="margin-top:10px; font-size: 0.75rem; font-weight: 600;">PENGELUARAN</div>
+                    <div class="nominal-label" id="diag-nominal-keluar" style="color: #f87171;">Rp 0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- PENGATURAN DATA ---
+        const saldoAwal = 10000000; // Ubah angka ini untuk Saldo Awal
+        
+        const dataTransaksi = [
+            { tgl: "05 April 2026", ket: "Provider Wifi ID Net", tipe: "masuk", nominal: 500000 },
+            { tgl: "08 Mar 2026", ket: "Rapat Pengurus", tipe: "masuk", nominal: 150000 },
+            { tgl: "12 Mar 2026", ket: "Perbaikan CCTV Blok E", tipe: "keluar", nominal: 1200000 },
+        ];
+
+        function bukaGoogleDrive() {
+            window.open("https://drive.google.com/drive/my-drive", "_blank");
+        }
+
+        function initData() {
+            let totalMasuk = 0;
+            let totalKeluar = 0;
+            let tableHTML = "";
+
+            dataTransaksi.forEach(item => {
+                if(item.tipe === 'masuk') totalMasuk += item.nominal;
+                else totalKeluar += item.nominal;
+
+                tableHTML += `<tr>
+                    <td style="width: 25%">${item.tgl}</td>
+                    <td>${item.ket}</td>
+                    <td style="color: ${item.tipe === 'masuk' ? '#4ade80' : '#f87171'}; font-weight: 600; text-align: right;">
+                        ${item.tipe === 'masuk' ? '+' : '-'} ${item.nominal.toLocaleString('id-ID')}
+                    </td>
+                </tr>`;
+            });
+
+            const saldoAkhir = saldoAwal + totalMasuk - totalKeluar;
+
+            // Update UI Halaman Utama
+            document.getElementById('display-saldo').innerText = "Rp " + saldoAkhir.toLocaleString('id-ID');
+            
+            // Update UI Halaman Rincian
+            document.getElementById('table-transaksi').innerHTML = tableHTML;
+            document.getElementById('label-saldo-awal').innerText = "Rp " + saldoAwal.toLocaleString('id-ID');
+            document.getElementById('total-debit').innerText = "Rp " + totalMasuk.toLocaleString('id-ID');
+            document.getElementById('total-kredit').innerText = "Rp " + totalKeluar.toLocaleString('id-ID');
+            document.getElementById('label-saldo-akhir').innerText = "Rp " + saldoAkhir.toLocaleString('id-ID');
+
+            // Update UI Diagram
+            const grandTotal = totalMasuk + totalKeluar;
+            const pMasuk = grandTotal > 0 ? (totalMasuk / grandTotal * 100).toFixed(1) : 0;
+            const pKeluar = grandTotal > 0 ? (totalKeluar / grandTotal * 100).toFixed(1) : 0;
+
+            document.getElementById('bar-masuk').style.height = (pMasuk * 1.5) + "px";
+            document.getElementById('bar-keluar').style.height = (pKeluar * 1.5) + "px";
+            document.getElementById('val-masuk').innerText = pMasuk + "%";
+            document.getElementById('val-keluar').innerText = pKeluar + "%";
+            document.getElementById('diag-nominal-masuk').innerText = "Rp " + totalMasuk.toLocaleString('id-ID');
+            document.getElementById('diag-nominal-keluar').innerText = "Rp " + totalKeluar.toLocaleString('id-ID');
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId === 'main' ? 'main-content' : 'halaman-' + pageId).classList.add('active');
+            if(pageId === 'diagram' || pageId === 'rincian') initData();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.onload = initData;
+    </script>
+</body>
+</html>
